@@ -1,0 +1,19 @@
+#!/bin/sh
+
+if [ -r /etc/defaults/periodic.conf ]
+then
+    . /etc/defaults/periodic.conf
+    source_periodic_confs
+fi
+
+rmcmd="rm -rv"
+#rmcmd="echo"
+cleanup_ssh_tmp_files_pattern="${cleanup_ssh_tmp_files_pattern:-ssh-*}"
+cleanup_ssh_tmp_files_days="${cleanup_ssh_tmp_files_days:-30d}"
+
+
+rc=0
+rc=$(find /tmp -maxdepth 1 -name ${cleanup_ssh_tmp_files_pattern} -mtime +${cleanup_ssh_tmp_files_days} -print |
+    xargs -n1 $rmcmd | tee /dev/stderr | wc -l)
+[ $rc -gt 1 ] && rc=1
+exit $rc

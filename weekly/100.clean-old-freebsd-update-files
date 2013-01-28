@@ -1,0 +1,27 @@
+#!/bin/sh
+
+rc=0
+freebsd_update_db=/var/db/freebsd-update
+
+if ! cd $freebsd_update_db ; then
+    exit 2
+fi
+
+for d in `find . -mindepth 1 -maxdepth 1 -type d -name "install.*" -mtime +365d -print` ; do
+    echo "deleting $d"
+    rm -r $d
+    rc=1
+done
+
+if [ -d files ] ; then
+    files=`find files -mtime +365d -print | xargs rm -v | wc -l`
+    if [ $files -gt 0 ] ; then
+	echo "$files files are deleted in files/"
+	rc=1
+    fi
+else
+    echo "files not found."
+    rc=1
+fi
+
+exit $rc

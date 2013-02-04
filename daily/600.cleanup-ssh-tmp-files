@@ -12,6 +12,9 @@ cleanup_ssh_tmp_files_pattern="${cleanup_ssh_tmp_files_pattern:-ssh-*}"
 cleanup_ssh_tmp_files_days="${cleanup_ssh_tmp_files_days:-30d}"
 
 
+echo ""
+echo "remove SSH agent tmp files:"
+
 rc=0
 rc=$(find /tmp -maxdepth 1 -name ${cleanup_ssh_tmp_files_pattern} -mtime +${cleanup_ssh_tmp_files_days} -print |
     xargs -n1 $rmcmd | tee /dev/stderr | wc -l)

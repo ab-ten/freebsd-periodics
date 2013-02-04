@@ -1,0 +1,28 @@
+#!/bin/sh
+# -*- mode:sh; -*-
+
+if [ -r /etc/defaults/periodic.conf ]; then
+    . /etc/defaults/periodic.conf
+    source_periodic_confs
+fi
+
+rc=0
+case "${daily_find_large_log_enable:-YES}" in
+    [Nn][Oo])
+        ;;
+    *)
+	echo ""
+	echo "Large log files:"
+	find ${daily_find_large_log_dirs:-/var/log} -type f	\
+	    -size +${daily_find_large_log_size:-30M}		\
+	    \! -regex "/var/db/freebsd-update/.*" -print	\
+	    > /tmp/large-logs
+	if [ -s /tmp/large-logs ] ; then
+	    rc=1
+	    xargs ls -lh < /tmp/large-logs
+	fi
+	rm /tmp/large-logs
+	;;
+esac
+
+exit "$rc"

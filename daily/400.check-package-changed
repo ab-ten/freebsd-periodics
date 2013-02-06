@@ -1,0 +1,44 @@
+#!/bin/sh -f
+
+if [ -r /etc/defaults/periodic.conf ]; then
+    . /etc/defaults/periodic.conf
+    source_periodic_confs
+fi
+
+dbfile=${daily_status_check_package_changed_db:-/usr/local/var/daily_package_check}
+
+rc=0
+case "${daily_status_check_package_changed:-YES}" in
+    [Nn][Oo])
+	;;
+    *)
+	echo
+	echo "Checking for a package database:"
+	pkg_version -Iv | sed 's/ .*$//' > "${dbfile}.new"
+	[ -f "$dbfile" ] || cp "${dbfile}.new" "$dbfile"
+	diff --unified "$dbfile" "${dbfile}.new" \
+	    | sed -n -e '1,2d' -e 's/^[-+]/& /p' > "${dbfile}.tmp"
+	cp "$dbfile" /tmp
+	mv "${dbfile}.new" "$dbfile"
+	if [ -f "${dbfile}.tmp" -a -s "${dbfile}.tmp" ] ; then
+	    ls -l ${dbfile}.tmp
+	    cat "${dbfile}.tmp" |\
+	    perl -e '$fmt=" %-32s %s\n"; while ($r=<>) { chomp $r;
+		if ($r =~ m/^[+] (.*)-([^-]+)$/) { $ad{$1}|=1; $a{$1}=$2; }
+		if ($r =~ m/^[-] (.*)-([^-]+)$/) { $ad{$1}|=2; $d{$1}=$2; } }
+	    foreach my $f (grep{$ad{$_}==3} keys %ad) {
+		$c{$f}="$d{$f} -> $a{$f}"; delete $a{$f}; delete $d{$f}; }
+	    if (keys %c) { print "\nchanged packages\n";
+		foreach my $f (sort keys %c) { printf($fmt, $f, $c{$f}) } }
+	    if (keys %d) { print "\nremoved packages\n";
+		foreach my $f (sort keys %d) { printf($fmt, $f, $d{$f}) } }
+	    if (keys %a) { print "\nadded packages\n";
+		foreach my $f (sort keys %a) { printf($fmt, $f, $a{$f}) } }
+	    ';
+	    rc=1
+	fi
+	mv "${dbfile}.tmp" /tmp
+	;;
+esac
+
+exit $rc

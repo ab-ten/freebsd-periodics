@@ -1,0 +1,17 @@
+#!/bin/sh
+
+rc=0
+dbfile="/var/db/check-open-ports"
+sockstat -4l | sed -n -e '2,$s/\(.........\)\(...........\)\(.*\)$/\1\2 \3/p' \
+    | awk '{print $1,$2,$5,$6}' | sort | uniq > $dbfile.tmp
+
+if [ -f $dbfile ] ; then
+    if ! diff -U 0 $dbfile $dbfile.tmp > $dbfile.result ; then
+	rc=1
+	cat $dbfile.result
+    fi
+    rm $dbfile.result
+fi
+mv $dbfile.tmp $dbfile
+
+exit "$rc"

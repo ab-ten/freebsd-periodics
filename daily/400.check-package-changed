@@ -6,6 +6,11 @@ if [ -r /etc/defaults/periodic.conf ]; then
 fi
 
 dbfile=${daily_status_check_package_changed_db:-/usr/local/var/daily_package_check}
+if [ -x /usr/sbin/pkg ] ; then
+    pkgversion="${daily_status_check_package_changed:-pkg version -vRU}"
+else
+    pkgversion="${daily_status_check_package_changed:-pkg_version -Iv}"
+fi
 
 rc=0
 case "${daily_status_check_package_changed:-YES}" in
@@ -14,7 +19,7 @@ case "${daily_status_check_package_changed:-YES}" in
     *)
 	echo
 	echo "Checking for a package database:"
-	pkg_version -Iv | sed 's/ .*$//' > "${dbfile}.new"
+	${pkgversion} | sed 's/ .*$//' > "${dbfile}.new"
 	[ -f "$dbfile" ] || cp "${dbfile}.new" "$dbfile"
 	diff --unified "$dbfile" "${dbfile}.new" \
 	    | sed -n -e '1,2d' -e 's/^[-+]/& /p' > "${dbfile}.tmp"

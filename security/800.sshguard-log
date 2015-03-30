@@ -66,7 +66,13 @@ case "$daily_status_security_sshguard_enable" in
 	echo "${host} sshguard log:"
 	n=$(catmsgs | egrep -ia "^$yesterday.* (sshguard)" |
 	    tee /dev/stderr | wc -l)
-	[ $n -gt 0 ] && rc=1 || rc=0;;
+	[ $n -gt 0 ] && rc=1 || rc=0
+	pfctl -t sshguard -T show 2>/dev/null | \
+	    while read LINE ; do
+		echo -n "$LINE "
+		if ! nslookup $LINE | sed -n 's/^.*name.*=//p' | grep "." ; then echo ; fi
+	    done
+	;;
     *)	rc=0;;
 esac
 
